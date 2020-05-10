@@ -8,9 +8,9 @@ from random import randrange
 from csv import reader
 from math import sqrt
 import random
+
 r = random.Random()
 r.seed("AI")
-
 
 import math
 
@@ -60,6 +60,60 @@ class Node:
         self.value = value
 
 
+class Maze:
+    matrix = []
+    start = None
+    end = None
+    endi = None
+    endj = None
+    nrows = 0
+    ncols = 0
+
+    def __init__(self, maze_str, edge_cost):
+        self.parse_maze(maze_str, edge_cost)
+        self.populate_nodes()
+
+    def parse_maze(self, maze_str, edge_cost):
+        rows = maze_str.split()
+        self.nrows = len(rows)
+        self.ncols = rows[0].count(",") + 1
+        id_latest = 0
+        for i, row in enumerate(rows):
+            cols = row.split(",")
+            new_row = []
+            for j, col in enumerate(cols):
+                node = Node(col)
+                node.id = id_latest
+                node.edgeCost = edge_cost[i * self.ncols + j]
+                id_latest += 1
+                if col == "S":
+                    self.start = node
+                elif col == "E":
+                    self.end = node
+                    self.endi = i
+                    self.endj = j
+                new_row.append(node)
+            self.matrix.append(new_row)
+
+    def populate_nodes(self):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
+                # Connect Neighbors
+                if i - 1 >= 0:
+                    (self.matrix[i][j]).up = self.matrix[i - 1][j]
+                if i + 1 < self.nrows:
+                    (self.matrix[i][j]).down = self.matrix[i + 1][j]
+                if j - 1 >= 0:
+                    (self.matrix[i][j]).left = self.matrix[i][j - 1]
+                if j + 1 < self.ncols:
+                    (self.matrix[i][j]).right = self.matrix[i][j + 1]
+
+                # Calculate Heuristic
+                (self.matrix[i][j]).hOfN = self.calculate_heuristic(i, j)
+
+    def calculate_heuristic(self, i, j):
+        # Manhattan Distance
+        return abs(i - self.endi) + abs(j - self.endj)
 
 class SearchAlgorithms:
     ''' * DON'T change Class, Function or Parameters Names and Order
@@ -70,7 +124,7 @@ class SearchAlgorithms:
     fullPath = []  # Represents all visited nodes from the start node to the goal node.
     totalCost = None
 
-    def __init__(self, mazeStr,edgeCost = None):
+    def __init__(self, mazeStr, edgeCost=None):
         ''' mazeStr contains the full board
          The board is read row wise,
         the nodes are numbered 0-based starting
@@ -92,6 +146,7 @@ class KNN_Algorithm:
 
     def KNN(self, X_train, X_test, Y_train, Y_test):
         pass
+
 
 # endregion
 
@@ -179,7 +234,8 @@ class GeneticAlgorithm:
 
     # complete fitness function
     def fitness(self, dna):
-       pass
+        pass
+
     """ 
        For each gene in the DNA, there is a 1/mutation_chance chance that it will be 
        switched out with a random character. This ensures diversity in the 
@@ -187,16 +243,16 @@ class GeneticAlgorithm:
        """
 
     def mutate(self, dna, random1, random2):
-       pass
+        pass
 
-       """ 
+        """ 
        Slices both dna1 and dna2 into two parts at a random index within their 
        length and merges them. Both keep their initial sublist up to the crossover 
        index, but their ends are swapped. 
        """
 
     def crossover(self, dna1, dna2, random1, random2):
-       pass
+        pass
 
 
 # endregion
@@ -204,11 +260,13 @@ class GeneticAlgorithm:
 # region Search_Algorithms_Main_Fn
 def SearchAlgorithm_Main():
     searchAlgo = SearchAlgorithms('S,.,.,#,.,.,. .,#,.,.,.,#,. .,#,.,.,.,.,. .,.,#,#,.,.,. #,.,#,E,.,#,.',
-                                  [0, 15, 2, 100, 60, 35, 30, 3
-                                          , 100, 2, 15, 60, 100, 30, 2
-                                          , 100, 2, 2, 2, 40, 30, 2, 2
-                                          , 100, 100, 3, 15, 30, 100, 2
-                                          , 100, 0, 2, 100, 30])
+                                  [0, 15, 2, 100, 60, 35, 30,
+                                   3, 100, 2, 15, 60, 100, 30,
+                                   2, 100, 2, 2, 2, 40, 30, 2,
+                                   2, 100, 100, 3, 15, 30, 100,
+                                   2, 100, 0, 2, 100, 30]
+                                  )
+
     fullPath, path, TotalCost = searchAlgo.AstarManhattanHeuristic()
     print('**ASTAR with Manhattan Heuristic ** Full Path:' + str(fullPath) + '\nPath is: ' + str(path)
           + '\nTotal Cost: ' + str(TotalCost) + '\n\n')
@@ -237,7 +295,7 @@ def KNN_Main():
     for index, row in y.iterrows():
         YTemp.append(row[1])
     y = YTemp;
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1024)
     KNN = KNN_Algorithm(7);
     accuracy = KNN.KNN(X_train, X_test, y_train, y_test)
     print("KNN Accuracy: " + str(accuracy))
@@ -263,9 +321,9 @@ def GeneticAlgorithm_Main():
         for _ in range(int(genetic.POP_SIZE / 2)):
             ind1 = genetic.weighted_choice(weighted_population)
             ind2 = genetic.weighted_choice(weighted_population)
-            ind1, ind2 = genetic.crossover(ind1, ind2, r.random(),r.random())
-            population.append(genetic.mutate(ind1,r.random(),r.random()))
-            population.append(genetic.mutate(ind2,r.random(),r.random()))
+            ind1, ind2 = genetic.crossover(ind1, ind2, r.random(), r.random())
+            population.append(genetic.mutate(ind1, r.random(), r.random()))
+            population.append(genetic.mutate(ind2, r.random(), r.random()))
 
     fittest_string = population[0]
     minimum_fitness = genetic.fitness(population[0])
@@ -282,7 +340,6 @@ def GeneticAlgorithm_Main():
 # endregion
 ######################## MAIN ###########################33
 if __name__ == '__main__':
-
     SearchAlgorithm_Main()
-    KNN_Main()
-    GeneticAlgorithm_Main()
+    # KNN_Main()
+    # GeneticAlgorithm_Main()
