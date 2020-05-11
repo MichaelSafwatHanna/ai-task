@@ -59,6 +59,16 @@ class Node:
     def __init__(self, value):
         self.value = value
 
+    @property
+    def neighbors(self):
+        return [self.up, self.down, self.right, self.left]
+
+    @property
+    def f_of_n(self):
+        return self.gOfN + self.hOfN
+
+    def set_g_of_n(self, distance_so_far):
+        self.gOfN = self.edgeCost + distance_so_far
 
 class Maze:
     matrix = []
@@ -123,16 +133,58 @@ class SearchAlgorithms:
     path = []  # Represents the correct path from start node to the goal node.
     fullPath = []  # Represents all visited nodes from the start node to the goal node.
     totalCost = None
+    maze = None
 
     def __init__(self, mazeStr, edgeCost=None):
         ''' mazeStr contains the full board
          The board is read row wise,
         the nodes are numbered 0-based starting
         the leftmost node'''
-        pass
+        self.maze = Maze(mazeStr, edgeCost)
 
     def AstarManhattanHeuristic(self):
+        extended = [self.maze.start]
+        closed = []
+        self.maze.start.gOfN = 0
+        distance_so_far = self.maze.start.edgeCost
+        self.totalCost = 0
+
+        while len(extended) > 0:
+            extended.sort(key=lambda x: x.f_of_n)
+            n = extended.pop(0)
+            closed.append(n)
+            distance_so_far += n.edgeCost
+            # n is Goal Node
+            if n == self.maze.end:
+                while n != self.maze.start:
+                    self.path.append(n.id)
+                    n = n.previousNode
+                    self.totalCost += n.edgeCost
+                self.path.append(self.maze.start.id)
+                self.path.reverse()
+
+                for cn in closed:
+                    self.fullPath.append(cn.id)
+
+            for neighbor in n.neighbors:
+                if neighbor is None:
+                    continue
+                neighbor.set_g_of_n(distance_so_far)
+                if neighbor.value == "#":
+                    continue
+                if neighbor in closed:
+                    continue
+                if self.add_to_extended(extended, neighbor):
+                    neighbor.previousNode = n
+                    extended.append(neighbor)
+
         return self.fullPath, self.path, self.totalCost
+
+    def add_to_extended(self, extended, neighbor):
+        for n in extended:
+            if n == neighbor and neighbor.f_of_n >= n.f_of_n:
+                return False
+        return True
 
 # endregion
 
