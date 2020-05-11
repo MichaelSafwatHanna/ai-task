@@ -1,4 +1,5 @@
 from math import sqrt
+from typing import List
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_breast_cancer
@@ -8,10 +9,8 @@ from random import randrange
 from csv import reader
 from math import sqrt
 import random
-
 r = random.Random()
 r.seed("AI")
-
 import math
 
 
@@ -46,11 +45,11 @@ class Stack:
 
 class Node:
     id = None
-    up = None
-    down = None
-    left = None
-    right = None
-    previousNode = None
+    up: 'Node' = None
+    down: 'Node' = None
+    left: 'Node' = None
+    right: 'Node' = None
+    previousNode: 'Node' = None
     edgeCost = None
     gOfN = None  # total edge cost
     hOfN = None  # heuristic value
@@ -70,14 +69,19 @@ class Node:
     def set_g_of_n(self, distance_so_far):
         self.gOfN = self.edgeCost + distance_so_far
 
+
 class Maze:
+    goal_symbol = "E"
+    start_symbol = "S"
+    obstacle_symbol = "#"
+
     matrix = []
-    start = None
-    end = None
-    endi = None
-    endj = None
-    nrows = 0
-    ncols = 0
+    start: 'Node' = None
+    goal: 'Node' = None
+    goal_h_index = None
+    goal_v_index = None
+    n_rows = 0
+    n_cols = 0
 
     def __init__(self, maze_str, edge_cost):
         self.parse_maze(maze_str, edge_cost)
@@ -85,8 +89,8 @@ class Maze:
 
     def parse_maze(self, maze_str, edge_cost):
         rows = maze_str.split()
-        self.nrows = len(rows)
-        self.ncols = rows[0].count(",") + 1
+        self.n_rows = len(rows)
+        self.n_cols = rows[0].count(",") + 1
         id_latest = 0
         for i, row in enumerate(rows):
             cols = row.split(",")
@@ -94,28 +98,28 @@ class Maze:
             for j, col in enumerate(cols):
                 node = Node(col)
                 node.id = id_latest
-                node.edgeCost = edge_cost[i * self.ncols + j]
+                node.edgeCost = edge_cost[i * self.n_cols + j]
                 id_latest += 1
-                if col == "S":
+                if col == self.start_symbol:
                     self.start = node
-                elif col == "E":
-                    self.end = node
-                    self.endi = i
-                    self.endj = j
+                elif col == self.goal_symbol:
+                    self.goal = node
+                    self.goal_h_index = i
+                    self.goal_v_index = j
                 new_row.append(node)
             self.matrix.append(new_row)
 
     def populate_nodes(self):
-        for i in range(self.nrows):
-            for j in range(self.ncols):
-                # Connect Neighbors
+        for i in range(self.n_rows):
+            for j in range(self.n_cols):
+                # Connect Node Neighbors
                 if i - 1 >= 0:
                     (self.matrix[i][j]).up = self.matrix[i - 1][j]
-                if i + 1 < self.nrows:
+                if i + 1 < self.n_rows:
                     (self.matrix[i][j]).down = self.matrix[i + 1][j]
                 if j - 1 >= 0:
                     (self.matrix[i][j]).left = self.matrix[i][j - 1]
-                if j + 1 < self.ncols:
+                if j + 1 < self.n_cols:
                     (self.matrix[i][j]).right = self.matrix[i][j + 1]
 
                 # Calculate Heuristic
@@ -123,7 +127,7 @@ class Maze:
 
     def calculate_heuristic(self, i, j):
         # Manhattan Distance
-        return abs(i - self.endi) + abs(j - self.endj)
+        return abs(i - self.goal_h_index) + abs(j - self.goal_v_index)
 
 class SearchAlgorithms:
     ''' * DON'T change Class, Function or Parameters Names and Order
@@ -133,7 +137,7 @@ class SearchAlgorithms:
     path = []  # Represents the correct path from start node to the goal node.
     fullPath = []  # Represents all visited nodes from the start node to the goal node.
     totalCost = None
-    maze = None
+    maze: Maze = None
 
     def __init__(self, mazeStr, edgeCost=None):
         ''' mazeStr contains the full board
@@ -155,7 +159,7 @@ class SearchAlgorithms:
             closed.append(n)
             distance_so_far += n.edgeCost
             # n is Goal Node
-            if n == self.maze.end:
+            if n == self.maze.goal:
                 while n != self.maze.start:
                     self.path.append(n.id)
                     n = n.previousNode
@@ -166,6 +170,7 @@ class SearchAlgorithms:
                 for cn in closed:
                     self.fullPath.append(cn.id)
 
+            # Check Neighbors
             for neighbor in n.neighbors:
                 if neighbor is None:
                     continue
@@ -180,7 +185,7 @@ class SearchAlgorithms:
 
         return self.fullPath, self.path, self.totalCost
 
-    def add_to_extended(self, extended, neighbor):
+    def add_to_extended(self, extended: List[Node], neighbor: Node):
         for n in extended:
             if n == neighbor and neighbor.f_of_n >= n.f_of_n:
                 return False
