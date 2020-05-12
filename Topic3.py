@@ -160,8 +160,8 @@ class SearchAlgorithms:
                 while n != self.maze.start:
                     # push to the list top to avoid reversing
                     self.path.insert(0, n.id)
-                    n = n.previousNode
                     self.totalCost += n.edgeCost
+                    n = n.previousNode
                 self.path.insert(0, self.maze.start.id)
 
                 for cn in closed:
@@ -234,13 +234,13 @@ class GeneticAlgorithm:
     DNA_SIZE = len(Cities)
     POP_SIZE = 20
     GENERATIONS = 5000
+    mutation_chance = 0.01
 
     """
     - Chooses a random element from items, where items is a list of tuples in
        the form (item, weight).
     - weight determines the probability of choosing its respective item. 
      """
-
     def weighted_choice(self, items):
         weight_total = sum((item[1] for item in items))
         n = r.uniform(0, weight_total)
@@ -254,15 +254,13 @@ class GeneticAlgorithm:
       Return a random character between ASCII 32 and 126 (i.e. spaces, symbols, 
        letters, and digits). All characters returned will be nicely printable. 
     """
-
-    def random_char():
+    def random_char(self):
         return chr(int(r.randrange(32, 126, 1)))
 
     """ 
        Return a list of POP_SIZE individuals, each randomly generated via iterating 
        DNA_SIZE times to generate a string of random characters with random_char(). 
     """
-
     def random_population(self):
         pop = []
         for i in range(1, 21):
@@ -309,9 +307,17 @@ class GeneticAlgorithm:
         else:
             return 15
 
+    '''
+        * The fitness function is sum of distance between every two cities in the list.
+    '''
     # complete fitness function
     def fitness(self, dna):
-        pass
+        fit = 0
+        for i in range(len(dna) - 1):
+            fit += self.cost(dna[i], dna[i + 1])
+        if fit == 0:
+            print(dna)
+        return fit
 
     """ 
        For each gene in the DNA, there is a 1/mutation_chance chance that it will be 
@@ -320,16 +326,36 @@ class GeneticAlgorithm:
        """
 
     def mutate(self, dna, random1, random2):
-        pass
+        mutation = dna[:]
+        for i in range(self.DNA_SIZE):
+            if random1 <= self.mutation_chance:
+                swap_with = int(random2 * self.DNA_SIZE)
+                if swap_with < self.DNA_SIZE:
+                    mutation[i], mutation[swap_with] = mutation[swap_with], mutation[i]
+        return mutation
 
-        """ 
+        '''
        Slices both dna1 and dna2 into two parts at a random index within their 
        length and merges them. Both keep their initial sublist up to the crossover 
        index, but their ends are swapped. 
-       """
+       '''
 
     def crossover(self, dna1, dna2, random1, random2):
-        pass
+        offspring1 = []
+        offspring2 = []
+        index_a = int(random1 * self.DNA_SIZE)
+        index_b = int(random2 * self.DNA_SIZE)
+        start = min(index_a, index_b)
+        end = max(index_a, index_b)
+
+        for i in range(start, end):
+            offspring1.append(dna1[i])
+            offspring2.append(dna2[i])
+
+        offspring1 = offspring1 + [item for item in dna2 if item not in offspring1]
+        offspring2 = offspring2 + [item for item in dna1 if item not in offspring2]
+
+        return offspring1, offspring2
 
 
 # endregion
@@ -417,6 +443,6 @@ def GeneticAlgorithm_Main():
 # endregion
 ######################## MAIN ###########################33
 if __name__ == '__main__':
-    SearchAlgorithm_Main()
+    # SearchAlgorithm_Main()
     # KNN_Main()
-    # GeneticAlgorithm_Main()
+    GeneticAlgorithm_Main()
