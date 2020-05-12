@@ -54,13 +54,15 @@ class Node:
     gOfN = None  # total edge cost
     hOfN = None  # heuristic value
     heuristicFn = None
+    pos_i: None
+    pos_j: None
 
     def __init__(self, value):
         self.value = value
 
     @property
     def neighbors(self):
-        return [self.up, self.down, self.right, self.left]
+        return [self.up, self.down, self.left, self.right]
 
     @property
     def f_of_n(self):
@@ -69,6 +71,9 @@ class Node:
     def set_g_of_n(self, distance_so_far):
         self.gOfN = self.edgeCost + distance_so_far
 
+    def calculate_heuristic(self, si, sj):
+        # Manhattan Distance
+        self.hOfN = abs(si - self.pos_i) + abs(sj - self.pos_j)
 
 class Maze:
     goal_symbol = "E"
@@ -78,14 +83,12 @@ class Maze:
     matrix = []
     start: 'Node' = None
     goal: 'Node' = None
-    goal_h_index = None
-    goal_v_index = None
     n_rows = 0
     n_cols = 0
 
     def __init__(self, maze_str, edge_cost):
         self.parse_maze(maze_str, edge_cost)
-        self.populate_nodes()
+        self.connect_neighbors()
 
     def parse_maze(self, maze_str, edge_cost):
         rows = maze_str.split()
@@ -98,21 +101,20 @@ class Maze:
             for j, col in enumerate(cols):
                 node = Node(col)
                 node.id = id_latest
+                node.pos_i = i
+                node.pos_j = j
                 node.edgeCost = edge_cost[i * self.n_cols + j]
                 id_latest += 1
                 if col == self.start_symbol:
                     self.start = node
                 elif col == self.goal_symbol:
                     self.goal = node
-                    self.goal_h_index = i
-                    self.goal_v_index = j
                 new_row.append(node)
             self.matrix.append(new_row)
 
-    def populate_nodes(self):
+    def connect_neighbors(self):
         for i in range(self.n_rows):
             for j in range(self.n_cols):
-                # Connect Node Neighbors
                 if i - 1 >= 0:
                     (self.matrix[i][j]).up = self.matrix[i - 1][j]
                 if i + 1 < self.n_rows:
@@ -122,12 +124,6 @@ class Maze:
                 if j + 1 < self.n_cols:
                     (self.matrix[i][j]).right = self.matrix[i][j + 1]
 
-                # Calculate Heuristic
-                (self.matrix[i][j]).hOfN = self.calculate_heuristic(i, j)
-
-    def calculate_heuristic(self, i, j):
-        # Manhattan Distance
-        return abs(i - self.goal_h_index) + abs(j - self.goal_v_index)
 
 class SearchAlgorithms:
     ''' * DON'T change Class, Function or Parameters Names and Order
@@ -150,6 +146,7 @@ class SearchAlgorithms:
         extended = [self.maze.start]
         closed = []
         self.maze.start.gOfN = 0
+        self.maze.start.hOfN = 0
         distance_so_far = self.maze.start.edgeCost
         self.totalCost = 0
 
@@ -161,11 +158,11 @@ class SearchAlgorithms:
             # n is Goal Node
             if n == self.maze.goal:
                 while n != self.maze.start:
-                    self.path.append(n.id)
+                    # push to the list top to avoid reversing
+                    self.path.insert(0, n.id)
                     n = n.previousNode
                     self.totalCost += n.edgeCost
-                self.path.append(self.maze.start.id)
-                self.path.reverse()
+                self.path.insert(0, self.maze.start.id)
 
                 for cn in closed:
                     self.fullPath.append(cn.id)
@@ -174,9 +171,10 @@ class SearchAlgorithms:
             for neighbor in n.neighbors:
                 if neighbor is None:
                     continue
-                neighbor.set_g_of_n(distance_so_far)
-                if neighbor.value == "#":
-                    continue
+                neighbor.calculate_heuristic(n.pos_i, n.pos_j)
+                neighbor.set_g_of_n(n.gOfN)
+                # if neighbor.value == "#":
+                #     continue
                 if neighbor in closed:
                     continue
                 if self.add_to_extended(extended, neighbor):
@@ -419,6 +417,6 @@ def GeneticAlgorithm_Main():
 # endregion
 ######################## MAIN ###########################33
 if __name__ == '__main__':
-    # SearchAlgorithm_Main()
-    KNN_Main()
+    SearchAlgorithm_Main()
+    # KNN_Main()
     # GeneticAlgorithm_Main()
