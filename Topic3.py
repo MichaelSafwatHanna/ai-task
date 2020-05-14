@@ -204,23 +204,21 @@ class KNN_Algorithm:
 
     def KNN(self, X_train, X_test, Y_train, Y_test):
         c = 0
-        distances = []
         for i in range(len(X_test)):
+            distances = []
             for j in range(len(X_train)):
                 euclidean_distance = self.euclidean_distance(X_test[i], X_train[j])
                 distances.append((Y_train[j], euclidean_distance))
+            
             distances.sort(key=lambda x: x[1])
-            freq_0 = 0
-            freq_1 = 0
+            k_neighbors = []
+            for k in range(self.K):
+                k_neighbors.append(distances[k][0])
+            freq_0 = k_neighbors.count(0)
+            freq_1 = k_neighbors.count(1)
             response = 1
-            for d in range(self.K):
-                if distances[d][1] == 0:
-                    freq_0 += 1
-                else:
-                    freq_1 += 1
-
-                if freq_0 > freq_1:
-                    response = 0
+            if freq_0 > freq_1:
+                response = 0
             if response == Y_test[i]:
                 c += 1
         return c * 100 / len(Y_test)
@@ -444,5 +442,5 @@ def GeneticAlgorithm_Main():
 ######################## MAIN ###########################33
 if __name__ == '__main__':
     # SearchAlgorithm_Main()
-    # KNN_Main()
-    GeneticAlgorithm_Main()
+    KNN_Main()
+    # GeneticAlgorithm_Main()
